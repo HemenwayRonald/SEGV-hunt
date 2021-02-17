@@ -71,6 +71,7 @@ extern int mq_send (mqd_t __mqdes, const char *__msg_ptr, size_t __msg_len,
 		    unsigned int __msg_prio) __nonnull ((2));
 
 #ifdef __USE_XOPEN2K
+# ifndef __USE_TIME_BITS64
 /* Receive the oldest from highest priority messages in message queue
    MQDES, stop waiting if ABS_TIMEOUT expires.  */
 extern ssize_t mq_timedreceive (mqd_t __mqdes, char *__restrict __msg_ptr,
@@ -79,12 +80,38 @@ extern ssize_t mq_timedreceive (mqd_t __mqdes, char *__restrict __msg_ptr,
 				const struct timespec *__restrict __abs_timeout)
   __nonnull ((2, 5));
 
+# else
+#  if defined(__REDIRECT)
+extern int __REDIRECT (mq_timedreceive, (mqd_t __mqdes,
+                               char *__restrict __msg_ptr,
+                               size_t __msg_len,
+                               unsigned int *__restrict __msg_prio,
+                               const struct timespec *__restrict __abs_timeout),
+                       __mq_timedreceive_time64)
+  __nonnull ((2, 5));
+#  else
+#   define mq_timedreceive __mq_timedreceive_time64
+#  endif
+# endif
+
 /* Add message pointed by MSG_PTR to message queue MQDES, stop blocking
    on full message queue if ABS_TIMEOUT expires.  */
 extern int mq_timedsend (mqd_t __mqdes, const char *__msg_ptr,
 			 size_t __msg_len, unsigned int __msg_prio,
 			 const struct timespec *__abs_timeout)
   __nonnull ((2, 5));
+
+# ifdef __USE_TIME_BITS64
+#  if defined(__REDIRECT)
+extern int __REDIRECT (mq_timedsend, (mqd_t __mqdes,
+                       const char *__msg_ptr, size_t __msg_len,
+                       unsigned int __msg_prio,
+                       const struct timespec *__abs_timeout),
+     __mq_timedsend_time64);
+#  else
+#   define mq_timedsend __mq_timedsend_time64
+#  endif
+# endif
 #endif
 
 /* Define some inlines helping to catch common problems.  */
